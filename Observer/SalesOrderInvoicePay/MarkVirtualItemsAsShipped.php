@@ -1,4 +1,8 @@
 <?php
+/*
+ * Copyright Magmodules.eu. All rights reserved.
+ * See COPYING.txt for license details.
+ */
 
 namespace Mollie\Payment\Observer\SalesOrderInvoicePay;
 
@@ -59,14 +63,10 @@ class MarkVirtualItemsAsShipped implements ObserverInterface
 
     private function getOrderLines(InvoiceInterface $invoice): ?array
     {
-        $orderLines = $this->orderLines->getOrderLinesByOrderId($invoice->getOrderId())->getItems();
-        if (!count($orderLines)) {
-            return null;
-        }
-
-        $orderLines = array_filter($orderLines, function (OrderLines $orderLine) {
-            return $orderLine->getType() == 'digital';
-        });
+        $orderLines = $this->orderLines->getOrderLinesByOrderId($invoice->getOrderId())
+            ->addFieldToFilter('unit_price', ['gt' => '0'])
+            ->addFieldToFilter('type', 'digital')
+            ->getItems();
 
         if (!count($orderLines)) {
             return null;
