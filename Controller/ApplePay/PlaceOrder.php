@@ -6,14 +6,17 @@
 
 namespace Mollie\Payment\Controller\ApplePay;
 
+use Exception;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\AddressInterface;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Api\GuestCartRepositoryInterface;
+use Magento\Quote\Model\Quote\Address;
 use Magento\Quote\Model\QuoteManagement;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
@@ -123,7 +126,7 @@ class PlaceOrder extends Action
         try {
             /** @var OrderInterface $order */
             $order = $this->quoteManagement->submit($cart);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->config->addToLog('error', [
                 'message' => 'Error while try place Apple Pay order',
                 'quote_id' => $cart->getId(),
@@ -162,7 +165,8 @@ class PlaceOrder extends Action
         $address->addData([
             AddressInterface::KEY_STREET => implode(PHP_EOL, $input['addressLines']),
             AddressInterface::KEY_COUNTRY_ID => strtoupper($input['countryCode']),
-            AddressInterface::KEY_LASTNAME => $input['familyName'],
+            // Sometimes the familyName may be empty, fall back to -- in that case.
+            AddressInterface::KEY_LASTNAME => $input['familyName'] ?: '--',
             AddressInterface::KEY_FIRSTNAME => $input['givenName'],
             AddressInterface::KEY_CITY => $input['locality'],
             AddressInterface::KEY_POSTCODE => $input['postalCode'],
