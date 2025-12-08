@@ -10,6 +10,8 @@ use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\DataObject;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Api\GuestCartRepositoryInterface;
@@ -84,30 +86,43 @@ class ShippingMethods extends Action
         $methods = $this->shippingMethodManagement->getList($cart->getId());
         $response = $this->resultFactory->create(ResultFactory::TYPE_JSON);
 
+        $transportObject = new DataObject(
+            [
+                'shipping_methods' => array_map(function ($method) {
+                    return [
+                        // Magento uses an _ (underscore) to separate the carrier and method, but those can have an
+                        // underscore as well. So separate by a different divider to prevent errors.
+                        'identifier' => $method->getCarrierCode() . '__SPLIT__' . $method->getMethodCode(),
+                        'label' => $method->getMethodTitle() . ' - ' . $method->getCarrierTitle(),
+                        'amount' => number_format($method->getPriceInclTax() ?: 0.0, 2, '.', ''),
+                        'detail' => '',
+                    ];
+                }, $methods),
+
+                'totals' => array_map(function (AddressTotal $total) {
+                    return [
+                        'type' => 'final',
+                        'code' => $total->getCode(),
+                        'label' => $total->getData('title'),
+                        'amount' => number_format($total->getData('value') ?: 0.0, 2, '.', ''),
+                    ];
+                }, array_values($cart->getTotals()))
+            ]
+        );
+
+        $this->_eventManager->dispatch(
+            'mollie_applepay_direct_shippingmethods',
+            ['transport' => $transportObject]
+        );
+
         return $response->setData([
-            'shipping_methods' => array_map(function ($method) {
-                return [
-                    // Magento uses an _ (underscore) to separate the carrier and method, but those can have an
-                    // underscore as well. So separate by a different divider to prevent errors.
-                    'identifier' => $method->getCarrierCode() . '__SPLIT__' . $method->getMethodCode(),
-                    'label' => $method->getMethodTitle() . ' - ' . $method->getCarrierTitle(),
-                    'amount' => number_format($method->getPriceInclTax() ?: 0.0, 2, '.', ''),
-                    'detail' => '',
-                ];
-            }, $methods),
-            'totals' => array_map(function (AddressTotal $total) {
-                return [
-                    'type' => 'final',
-                    'code' => $total->getCode(),
-                    'label' => $total->getData('title'),
-                    'amount' => number_format($total->getData('value') ?: 0.0, 2, '.', ''),
-                ];
-            }, array_values($cart->getTotals()))
+            'shipping_methods' => $transportObject->getData('shipping_methods'),
+            'totals' => $transportObject->getData('totals'),
         ]);
     }
 
     /**
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      * @return CartInterface
      */
     public function getCart(): CartInterface
