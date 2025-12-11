@@ -6,7 +6,7 @@
         </referenceBlock>
 
         <referenceBlock name="submit_before">
-            <block name="mollie_voucher_warning" class="Mollie\Payment\Block\Adminhtml\Sales\Creditmemo\VoucherWarning" />
+            <block name="mollie_voucher_warning" class="Mollie\Payment\Block\Adminhtml\Sales\Creditmemo\RemainderAmountWarning" />
         </referenceBlock>
     </body>
 </page>

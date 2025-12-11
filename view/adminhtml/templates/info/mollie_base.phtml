@@ -10,6 +10,8 @@
  * @var \Magento\Framework\Escaper $escaper
  */
 
+use Mollie\Payment\Block\Info\Method\GiftcardInfo;
+use Mollie\Payment\Model\Methods\Giftcard;
 use Mollie\Payment\Model\Methods\Voucher;
 
 // Magento 2.3 compatibility
@@ -19,8 +21,20 @@ $specificInfo = $block->getSpecificInformation();
 $status = $block->getPaymentStatus();
 ?>
 <div class="mollie-method">
-    <img src="<?= $escaper->escapeHtmlAttr($block->getViewFileUrl('Mollie_Payment::images/' . $block->getPaymentImage())) ?>"/>
-    <?= $escaper->escapeHtml($block->getMethod()->getTitle()); ?>
+
+    <?php
+    if ($block->getMethod() instanceof Giftcard) {
+        echo $block->getLayout()
+            ->createBlock(GiftcardInfo::class, '', ['data' => ['info' => $block->getInfo()]])
+            ->toHtml();
+    } else {
+        ?>
+            <img src="<?= $escaper->escapeHtmlAttr($block->getViewFileUrl('Mollie_Payment::images/' . $block->getPaymentImage())) ?>"/>
+            <?= $escaper->escapeHtml($block->getMethod()->getTitle()); ?>
+        <?php
+    }
+    ?>
+
     <?php if ($block->getMethod() instanceof Voucher): ?>
     |
     <?= $escaper->escapeHtml(__(
