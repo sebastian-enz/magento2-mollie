@@ -13,4 +13,6 @@ jobs:
           --volume $(pwd)/:/app/workdir
           michielgerritsen/magento-coding-standard:latest
           --severity=10
+          --standard=/app/workdir/phpcs.xml
           -s
+          --ignore-annotations
