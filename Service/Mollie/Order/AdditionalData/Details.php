@@ -21,7 +21,7 @@ class Details
         /* @var $giftcards Giftcard */
         ?array $giftcards,
         ?string $remainderMethod,
-        ?MollieAmount $remainderAmount
+        ?MollieAmount $remainderAmount = null
     ) {
         $this->giftcards = $giftcards;
         $this->remainderMethod = $remainderMethod;
