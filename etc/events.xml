@@ -27,6 +27,9 @@
         <!-- Order of execution is important -->
         <observer name="mollie_zzzz_lock_unlock_order" instance="Mollie\Payment\Observer\LockUnlockOrder" />
     </event>
+    <event name="adminhtml_sales_order_creditmemo_register_before">
+        <observer name="mollie_do_not_refund_giftcard" instance="Mollie\Payment\Observer\AdminhtmlSalesOrderCreditmemoRegisterBefore\DoNotRefundGiftcard" />
+    </event>
     <event name="sales_order_creditmemo_save_after">
         <observer name="mollie_create_online_refund" instance="Mollie\Payment\Observer\SalesOrderCreditmemoSaveAfter"/>
     </event>
